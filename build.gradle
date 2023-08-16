@@ -82,7 +82,6 @@ def buildNativesTask(def target, def currentPlatform) {
 	}
 
 	tasks.copyNatives.dependsOn copyNativesTask
-	tasks.processResources.mustRunAfter copyNativesTask
 
 	def buildNativesTask = tasks.register("buildNatives_${target}", Exec) {
 		group "natives"

@@ -61,6 +61,8 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v3
       - uses: actions/download-artifact@v3
+        with:
+          path: rboy/target
       - name: setup jdk
         uses: actions/setup-java@v3
         with:
@@ -68,8 +70,8 @@ jobs:
           distribution: 'microsoft'
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
-      - name: build
-        run: ./gradlew copyNatives build
+      - run: ./gradlew copyNatives
+      - run: ./gradlew build
       - name: build artifacts
         uses: actions/upload-artifact@v3
         with:
