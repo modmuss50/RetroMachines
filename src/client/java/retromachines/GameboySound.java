@@ -30,13 +30,14 @@ public class GameboySound extends AbstractSoundInstance {
 		return CompletableFuture.completedFuture(new GameboySoundStream());
 	}
 
-	public class GameboySoundStream implements AudioStream {
+	public static class GameboySoundStream implements AudioStream {
 		private static final AudioFormat FORMAT = new AudioFormat(44100, 8, 1, false, false);
 
 		private static final BytePriorityQueue leftQueue = new ByteArrayPriorityQueue();
 		private static final BytePriorityQueue rightQueue = new ByteArrayPriorityQueue();
 
 		static {
+			// Maybe need to alter jni.rs underflowed?
 			RBoyEvents.AUDIO_DATA.register((leftChannel, rightChannel) -> {
 				synchronized (GameboySoundStream.class) {
 					for (float v : leftChannel) {
@@ -64,16 +65,18 @@ public class GameboySound extends AbstractSoundInstance {
 
 		@Override
 		public ByteBuffer getBuffer(int size) {
+			// Not really too sure what to do here, see: https://github.com/mvdnes/rboy/blob/master/src/main.rs#L454C52-L454C52
 			synchronized (GameboySoundStream.class) {
 				ByteBuffer outBuffer = BufferUtils.createByteBuffer(size);
 
 				assert leftQueue.size() == rightQueue.size();
 
-				// Not really too sure what to do here, see: https://github.com/mvdnes/rboy/blob/master/src/main.rs#L454C52-L454C52
 				int outLen = Math.min(size / 2, leftQueue.size());
+
 				for (int i = 0; i < outLen; i++) {
+					// each sample needs to be 8 bits (2 bytes)?
 					outBuffer.put(leftQueue.dequeueByte());
-					//outBuffer.put(rightQueue.dequeueByte());
+					outBuffer.put(rightQueue.dequeueByte()); // Doesnt seem to stop if I comment this out
 				}
 
 				System.out.println(leftQueue.size());

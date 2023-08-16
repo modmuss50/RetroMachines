@@ -10,6 +10,7 @@ crate_type = ["cdylib"]
 [dependencies]
 blip_buf = ">=0.1.3"
 jni = "0.21.1"
+cpal = "0.14"
 
 [[bin]]
 name = "rboy"

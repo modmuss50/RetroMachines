@@ -14,6 +14,7 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
+import retromachines.GameboySound;
 import retromachines.rboy.RBoy;
 
 import java.io.IOException;
@@ -24,13 +25,18 @@ public class GameBoyScreen extends Screen {
 	private static final Identifier BACKGROUND_TEXTURE = new Identifier("retromachines", "textures/gui/gameboy.png");
 	private static final Identifier GPU_TEXTURE = new Identifier("retromachines", "gpu");
 
+	/**
+	 * Disable to process the audio within java
+	 */
+	private static final boolean USE_NATIVE_AUDIO = true;
+
 	private final RBoy.Context gameboy;
 	private final Thread gameboyThread;
 
 	public GameBoyScreen() {
 		super(Text.literal("Gameboy"));
 
-		gameboy = RBoy.Context.create("/Users/mark/Downloads/Tetris/Tetris.gb");
+		gameboy = RBoy.Context.create("/Users/mark/Downloads/Tetris/Tetris.gb", USE_NATIVE_AUDIO);
 
 		gameboyThread = new Thread(gameboy::runCpu);
 		gameboyThread.setName("RetroMachines: Gameboy");
@@ -41,9 +47,10 @@ public class GameBoyScreen extends Screen {
 		TextureManager textureManager = MinecraftClient.getInstance().getTextureManager();
 		textureManager.registerTexture(GPU_TEXTURE, new GPUTexture());
 
-		// TODO sound
-//		MinecraftClient client = MinecraftClient.getInstance();
-//		client.getSoundManager().play(new GameboySound(client.player.getPos()));
+		if (!USE_NATIVE_AUDIO) {
+			MinecraftClient client = MinecraftClient.getInstance();
+			client.getSoundManager().play(new GameboySound(client.player.getPos()));
+		}
 	}
 
 	@Override

@@ -1,9 +1,10 @@
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender, SyncSender};
 
-use jni::JNIEnv;
-use jni::objects::{JByteArray, JClass, JString};
-use jni::sys::{jlong, jint};
+use cpal::Stream;
+use jni::{JavaVM, JNIEnv};
+use jni::objects::{JByteArray, JClass, JString, JValue};
+use jni::sys::{jboolean, jint, jlong, jsize};
 
 use crate::device::Device;
 use crate::entrypoint::{construct_cpu, GBEvent, run_cpu};
@@ -11,7 +12,8 @@ use crate::entrypoint::{construct_cpu, GBEvent, run_cpu};
 struct Context {
     cpu_context_ptr: jlong,
     gpu_receiver: Receiver<Vec<u8>>,
-    event_sender: Sender<GBEvent>
+    event_sender: Sender<GBEvent>,
+    _cpal_audio_stream: Option<Stream>
 }
 
 struct CpuContext {
@@ -23,7 +25,8 @@ struct CpuContext {
 #[no_mangle]
 pub unsafe extern "system" fn Java_retromachines_rboy_RBoy_construct_1cpu<'local>(mut env: JNIEnv<'local>,
                                                               _class: JClass<'local>,
-                                                              j_filename: JString<'local>) -> jlong {
+                                                              j_filename: JString<'local>,
+                                                              use_native_audio: jboolean) -> jlong {
     let filename: String = env
         .get_string(&j_filename)
         .expect("Couldn't get java string!")
@@ -40,9 +43,32 @@ pub unsafe extern "system" fn Java_retromachines_rboy_RBoy_construct_1cpu<'local
 
     let (event_sender, event_receiver) = mpsc::channel();
     let (gpu_sender, gpu_receiver) = mpsc::sync_channel(1);
+
+    let mut cpu = cpu.unwrap();
+
+    let mut cpal_audio_stream = None;
+    if use_native_audio != 0 {
+        let player = crate::entrypoint::CpalPlayer::get();
+        match player {
+            Some((v, s)) => {
+                cpu.enable_audio(Box::new(v) as Box<dyn crate::AudioPlayer>);
+                cpal_audio_stream = Some(s);
+            },
+            None => {
+                panic!("Could not open audio device");
+            },
+        }
+    } else {
+        // Use JNI audio player, and let the host handle it
+        let audio_player = JniAudioPlayer{java_vm: env.get_java_vm().expect("Failed to get java_vm")};
+        cpu.enable_audio(Box::new(audio_player));
+    }
+
+
+
     // The CPU context's ownership is moved to the cpu thread.
-    let cpu_context = CpuContext {cpu: cpu.unwrap(), gpu_sender, event_receiver};
-    let context = Context {cpu_context_ptr: Box::into_raw(Box::new(cpu_context)) as jlong, gpu_receiver, event_sender};
+    let cpu_context = CpuContext {cpu, gpu_sender, event_receiver};
+    let context = Context {cpu_context_ptr: Box::into_raw(Box::new(cpu_context)) as jlong, gpu_receiver, event_sender, _cpal_audio_stream: cpal_audio_stream};
 
     return Box::into_raw(Box::new(context)) as jlong;
 }
@@ -71,10 +97,9 @@ pub unsafe extern "system" fn Java_retromachines_rboy_RBoy_get_1gpu_1data<'local
 pub unsafe extern "system" fn Java_retromachines_rboy_RBoy_send_1event<'local>(_env: JNIEnv<'local>,
                                                                                _class: JClass<'local>,
                                                                                context_ptr: jlong,
-                                                                               event: jint) {
+                                                                               event_code: jint) {
     let context = &mut *(context_ptr as *mut Context);
-
-    let event = match event {
+    let event = match event_code {
         KEY_A_DOWN => GBEvent::KeyDown(crate::KeypadKey::A),
         KEY_B_DOWN => GBEvent::KeyDown(crate::KeypadKey::B),
         KEY_UP_DOWN => GBEvent::KeyDown(crate::KeypadKey::Up),
@@ -91,13 +116,49 @@ pub unsafe extern "system" fn Java_retromachines_rboy_RBoy_send_1event<'local>(_
         KEY_RIGHT_UP => GBEvent::KeyUp(crate::KeypadKey::Right),
         KEY_SELECT_UP => GBEvent::KeyUp(crate::KeypadKey::Select),
         KEY_START_UP => GBEvent::KeyUp(crate::KeypadKey::Start),
-        STOP => GBEvent::Stop,
+        STOP => { GBEvent::Stop },
         SPEED_UP => GBEvent::SpeedUp,
         SPEED_DOWN => GBEvent::SpeedDown,
         _ => panic!("Unknown event"),
     };
 
     context.event_sender.send(event).expect("Failed to send event");
+
+    if event_code == STOP {
+        // Free the context ptr
+        let ctx = Box::from_raw(context_ptr as *mut Context);
+        drop(ctx);
+    }
+}
+
+struct JniAudioPlayer  {
+    java_vm: JavaVM
+}
+
+impl crate::AudioPlayer for JniAudioPlayer {
+    fn play(&mut self, left_channel: &[f32], right_channel: &[f32]) {
+        let mut env = self.java_vm.attach_current_thread().unwrap();
+        let class = env.find_class("retromachines/rboy/RBoyEvents").unwrap();
+
+        let j_left_channel = env.new_float_array(left_channel.len() as jsize).unwrap();
+        env.set_float_array_region(&j_left_channel, 0, left_channel).unwrap();
+
+        let j_right_channel = env.new_float_array(right_channel.len() as jsize).unwrap();
+        env.set_float_array_region(&j_right_channel, 0, right_channel).unwrap();
+
+        env.call_static_method(class, "audio_callback", "([F[F)V", &[
+            JValue::Object(&j_left_channel),
+            JValue::Object(&j_right_channel)
+        ]).unwrap();
+    }
+
+    fn samples_rate(&self) -> u32 {
+        44100
+    }
+
+    fn underflowed(&self) -> bool {
+        false
+    }
 }
 
 // Must match RBoy.java
