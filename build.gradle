@@ -66,39 +66,47 @@ tasks.register("buildNatives") {
 	group "natives"
 }
 
-def buildNativesTask(def target) {
+tasks.register("copyNatives") {
+	group "natives"
+}
+
+def buildNativesTask(def target, def currentPlatform) {
+	def copyNativesTask = tasks.register("copyNatives_${target}", Copy) {
+		group "natives"
+		from(file("rboy/target/${target}/release")) {
+			include "*.dylib" // MacOS
+			include "*.dll" // Windows
+			include "*.so" // Linux
+		}
+		into file("src/main/resources/natives/${target}")
+	}
+
+	tasks.copyNatives.dependsOn copyNativesTask
+	tasks.processResources.mustRunAfter copyNativesTask
+
 	def buildNativesTask = tasks.register("buildNatives_${target}", Exec) {
 		group "natives"
 		workingDir file("rboy")
 		commandLine "cargo", "build", "--lib", "--release", "--target", target
 
-		doLast {
-			project.copy {
-				from(file("rboy/target/${target}/release")) {
-					include "*.dylib" // MacOS
-					include "*.dll" // Windows
-					include "*.so" // Linux
-				}
-				into file("src/main/resources/natives/${target}")
-			}
-		}
+		finalizedBy copyNativesTask
 	}
 
-	tasks.buildNatives.dependsOn buildNativesTask
+	if (currentPlatform) {
+		tasks.buildNatives.dependsOn buildNativesTask
+	}
 }
 
 import net.fabricmc.loom.util.Platform
 def operatingSystem = Platform.CURRENT.operatingSystem
 
-if (operatingSystem.isMacOS()) {
-	buildNativesTask("x86_64-apple-darwin")
-	buildNativesTask("aarch64-apple-darwin")
-} else if (operatingSystem.linux) {
-	buildNativesTask("x86_64-unknown-linux-gnu")
-	buildNativesTask("i686-unknown-linux-gnu")
-	buildNativesTask("aarch64-unknown-linux-gnu")
-} else if (operatingSystem.windows) {
-	buildNativesTask("x86_64-pc-windows-msvc")
-	buildNativesTask("i686-pc-windows-msvc")
-	buildNativesTask("aarch64-pc-windows-msvc")
-}
+buildNativesTask("x86_64-apple-darwin", operatingSystem.isMacOS())
+buildNativesTask("aarch64-apple-darwin", operatingSystem.isMacOS())
+
+buildNativesTask("x86_64-unknown-linux-gnu", operatingSystem.isLinux())
+buildNativesTask("i686-unknown-linux-gnu", operatingSystem.isLinux())
+buildNativesTask("aarch64-unknown-linux-gnu", operatingSystem.isLinux())
+
+buildNativesTask("x86_64-pc-windows-msvc", operatingSystem.isWindows())
+buildNativesTask("i686-pc-windows-msvc", operatingSystem.isWindows())
+buildNativesTask("aarch64-pc-windows-msvc", operatingSystem.isWindows())

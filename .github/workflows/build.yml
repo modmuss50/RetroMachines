@@ -2,41 +2,64 @@ name: build
 on: [pull_request, push]
 
 jobs:
-  build_natives:
+  build_natives_linux:
     strategy:
       matrix:
-        os: [ubuntu-22.04, windows-2022, macos-13]
-    runs-on: ${{ matrix.os }}
+        target: [ aarch64-unknown-linux-gnu, i686-unknown-linux-gnu, x86_64-unknown-linux-gnu ]
+    runs-on: ubuntu-22.04
     steps:
       - name: checkout repository
         uses: actions/checkout@v3
-      - name: validate gradle wrapper
-        uses: gradle/wrapper-validation-action@v1
-      - name: setup jdk
-        uses: actions/setup-java@v3
-        with:
-          java-version: 17
-          distribution: 'microsoft'
-      - name: make gradle wrapper executable
-        if: ${{ runner.os != 'Windows' }}
-        run: chmod +x ./gradlew
-      - name: build natives
-        run: ./gradlew buildNatives
+      - run: rustup target add ${{ matrix.target }}
+      - run: cargo build --lib --release --target ${{ matrix.target }}
+        working-directory: ./rboy
       - name: upload natives
         uses: actions/upload-artifact@v3
         with:
-          name: natives-${{ matrix.os }}
-          path: src/main/resources/natives
+          name: linux natives ${{ matrix.target }}
+          path: rboy/target/**/release/*.so
+
+  build_natives_windows:
+    strategy:
+      matrix:
+        target: [ x86_64-pc-windows-msvc, i686-pc-windows-msvc, aarch64-pc-windows-msvc ]
+    runs-on: windows-2022
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v3
+      - run: rustup target add ${{ matrix.target }}
+      - run: cargo build --lib --release --target ${{ matrix.target }}
+        working-directory: ./rboy
+      - name: upload natives
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows natives ${{ matrix.target }}
+          path: rboy/target/**/release/*.dll
+
+  build_natives_macos:
+    strategy:
+      matrix:
+        target: [ x86_64-apple-darwin, aarch64-apple-darwin ]
+    runs-on: macos-13
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v3
+      - run: rustup target add ${{ matrix.target }}
+      - run: cargo build --lib --release --target ${{ matrix.target }}
+        working-directory: ./rboy
+      - name: upload natives
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows natives ${{ matrix.target }}
+          path: rboy/target/**/release/*.dylib
 
   build:
     runs-on: ubuntu-22.04
-    needs: build_natives
+    needs: [build_natives_linux, build_natives_windows, build_natives_macos]
     steps:
       - name: checkout repository
         uses: actions/checkout@v3
       - uses: actions/download-artifact@v3
-        with:
-          path: src/main/resources/natives
       - name: setup jdk
         uses: actions/setup-java@v3
         with:
@@ -45,7 +68,7 @@ jobs:
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
       - name: build
-        run: ./gradlew build
+        run: ./gradlew copyNatives build
       - name: build artifacts
         uses: actions/upload-artifact@v3
         with:
