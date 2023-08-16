@@ -40,6 +40,10 @@ public class GameBoyScreen extends Screen {
 		// TODO do we need to close this?
 		TextureManager textureManager = MinecraftClient.getInstance().getTextureManager();
 		textureManager.registerTexture(GPU_TEXTURE, new GPUTexture());
+
+		// TODO sound
+//		MinecraftClient client = MinecraftClient.getInstance();
+//		client.getSoundManager().play(new GameboySound(client.player.getPos()));
 	}
 
 	@Override
