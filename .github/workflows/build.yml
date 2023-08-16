@@ -10,6 +10,7 @@ jobs:
     steps:
       - name: checkout repository
         uses: actions/checkout@v3
+      - run: sudo apt update && sudo apt install --assume-yes libasound2-dev libudev-dev
       - run: rustup target add ${{ matrix.target }}
       - run: cargo build --lib --release --target ${{ matrix.target }}
         working-directory: ./rboy
