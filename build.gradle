@@ -1,0 +1,104 @@
+plugins {
+	id 'fabric-loom' version '1.3-SNAPSHOT'
+	id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+	archivesName = project.archives_base_name
+}
+
+loom {
+    splitEnvironmentSourceSets()
+
+	mods {
+		"retro-machines" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+}
+
+processResources {
+	inputs.property "version", project.version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": project.version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 17
+}
+
+java {
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_17
+	targetCompatibility = JavaVersion.VERSION_17
+}
+
+jar {
+	from("LICENSE") {
+		rename { "${it}_${project.base.archivesName.get()}"}
+	}
+}
+
+def cleanNatives = tasks.register("cleanNatives", Exec) {
+	group "natives"
+	workingDir file("rboy")
+	commandLine "cargo", "clean"
+}
+
+tasks.clean.dependsOn cleanNatives
+
+tasks.register("buildNatives") {
+	group "natives"
+}
+
+def buildNativesTask(def target) {
+	def buildNativesTask = tasks.register("buildNatives_${target}", Exec) {
+		group "natives"
+		workingDir file("rboy")
+		commandLine "cargo", "build", "--lib", "--release", "--target", target
+
+		doLast {
+			project.copy {
+				from(file("rboy/target/${target}/release")) {
+					include "*.dylib" // MacOS
+					include "*.dll" // Windows
+					include "*.so" // Linux
+				}
+				into file("src/main/resources/natives/${target}")
+			}
+		}
+	}
+
+	tasks.buildNatives.dependsOn buildNativesTask
+}
+
+import net.fabricmc.loom.util.Platform
+def operatingSystem = Platform.CURRENT.operatingSystem
+
+if (operatingSystem.isMacOS()) {
+	buildNativesTask("x86_64-apple-darwin")
+	buildNativesTask("aarch64-apple-darwin")
+} else if (operatingSystem.linux) {
+	buildNativesTask("x86_64-unknown-linux-gnu")
+	buildNativesTask("i686-unknown-linux-gnu")
+	buildNativesTask("aarch64-unknown-linux-gnu")
+} else if (operatingSystem.windows) {
+	buildNativesTask("x86_64-pc-windows-msvc")
+	buildNativesTask("i686-pc-windows-msvc")
+	buildNativesTask("aarch64-pc-windows-msvc")
+}

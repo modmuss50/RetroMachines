@@ -1,0 +1,23 @@
+# Ignore everything
+/*
+
+# Folders
+!/gradle
+!/src
+!/.github
+!/rboy
+
+# Files
+!/.gitattributes
+!/.gitignore
+!/build.gradle
+!/gradle.properties
+!/gradlew
+!/gradlew.bat
+!/LICENSE
+!/README.md
+!/settings.gradle
+
+*.DS_Store
+*.class
+src/main/resources/natives/*

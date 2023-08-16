@@ -1,0 +1,59 @@
+package retromachines.rboy;
+
+// javac -h . RBoy.java
+public class RBoy {
+	public static class Events {
+		public static int KEY_A_DOWN = 1;
+		public static int KEY_B_DOWN = 2;
+		public static int KEY_UP_DOWN = 3;
+		public static int KEY_DOWN_DOWN = 4;
+		public static int KEY_LEFT_DOWN = 5;
+		public static int KEY_RIGHT_DOWN = 6;
+		public static int KEY_SELECT_DOWN = 7;
+		public static int KEY_START_DOWN = 8;
+		public static int KEY_A_UP = 9;
+		public static int KEY_B_UP = 10;
+		public static int KEY_UP_UP = 11;
+		public static int KEY_DOWN_UP = 12;
+		public static int KEY_LEFT_UP = 13;
+		public static int KEY_RIGHT_UP = 14;
+		public static int KEY_SELECT_UP = 15;
+		public static int KEY_START_UP = 16;
+
+		public static int STOP = 101;
+		public static int SPEED_UP = 102;
+		public static int SPEED_DOWN = 103;
+	}
+
+	public static native long construct_cpu(String filename);
+
+	public static native void run_cpu(long contextPtr);
+
+	public static native byte[] get_gpu_data(long contextPtr);
+
+	public static native void send_event(long contextPtr, int event);
+
+	public record Context(long ptr) {
+		public static Context create(String filename) {
+			long ptr = construct_cpu(filename);
+
+			if (ptr == 0) {
+				throw new RuntimeException();
+			}
+
+			return new Context(ptr);
+		}
+
+		public void runCpu() {
+			run_cpu(ptr);
+		}
+
+		public byte[] getGpuData() {
+			return get_gpu_data(ptr);
+		}
+		
+		public void sendEvent(int event) {
+			send_event(ptr, event);
+		}
+	}
+}
