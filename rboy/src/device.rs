@@ -1,3 +1,4 @@
+use std::path;
 use crate::cpu::CPU;
 use crate::gbmode::GbMode;
 use crate::keypad::KeypadKey;
@@ -19,12 +20,12 @@ fn stdoutprinter(v: u8) -> Option<u8> {
 }
 
 impl Device {
-    pub fn new(romname: &str, skip_checksum: bool) -> StrResult<Device> {
-        CPU::new(romname, None, skip_checksum).map(|cpu| Device { cpu: cpu })
+    pub fn new(romdata: Vec<u8>, savepath: Option<path::PathBuf>, skip_checksum: bool) -> StrResult<Device> {
+        CPU::new(romdata, savepath, None, skip_checksum).map(|cpu| Device { cpu: cpu })
     }
 
-    pub fn new_cgb(romname: &str, skip_checksum: bool) -> StrResult<Device> {
-        CPU::new_cgb(romname, None, skip_checksum).map(|cpu| Device { cpu: cpu })
+    pub fn new_cgb(romdata: Vec<u8>, savepath: Option<path::PathBuf>, skip_checksum: bool) -> StrResult<Device> {
+        CPU::new_cgb(romdata, savepath, None, skip_checksum).map(|cpu| Device { cpu: cpu })
     }
 
     pub fn do_cycle(&mut self) -> u32 {

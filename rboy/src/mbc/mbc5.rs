@@ -17,10 +17,10 @@ pub struct MBC5 {
 }
 
 impl MBC5 {
-    pub fn new(data: Vec<u8>, file: path::PathBuf) -> StrResult<MBC5> {
+    pub fn new(data: Vec<u8>, savepath: Option<path::PathBuf>) -> StrResult<MBC5> {
         let subtype = data[0x147];
         let svpath = match subtype {
-            0x1B | 0x1E => Some(file.with_extension("gbsave")),
+            0x1B | 0x1E => savepath.map(|file| file.with_extension("gbsave")),
             _ => None,
         };
         let rambanks = match subtype {

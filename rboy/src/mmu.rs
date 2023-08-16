@@ -55,8 +55,8 @@ fn fill_random(slice: &mut [u8], start: u32) {
 }
 
 impl<'a> MMU<'a> {
-    pub fn new(romname: &str, serial_callback: Option<SerialCallback<'a>>, skip_checksum: bool) -> StrResult<MMU<'a>> {
-        let mmu_mbc = mbc::get_mbc(path::PathBuf::from(romname), skip_checksum)?;
+    pub fn new(romdata: Vec<u8>, savepath: Option<path::PathBuf>, serial_callback: Option<SerialCallback<'a>>, skip_checksum: bool) -> StrResult<MMU<'a>> {
+        let mmu_mbc = mbc::get_mbc(romdata, savepath, skip_checksum)?;
         let serial = match serial_callback {
             Some(cb) => Serial::new_with_callback(cb),
             None => Serial::new(),
@@ -91,8 +91,8 @@ impl<'a> MMU<'a> {
         Ok(res)
     }
 
-    pub fn new_cgb(romname: &str, serial_callback: Option<SerialCallback<'a>>, skip_checksum: bool) -> StrResult<MMU<'a>> {
-        let mmu_mbc = mbc::get_mbc(path::PathBuf::from(romname), skip_checksum)?;
+    pub fn new_cgb(romdata: Vec<u8>, savepath: Option<path::PathBuf>, serial_callback: Option<SerialCallback<'a>>, skip_checksum: bool) -> StrResult<MMU<'a>> {
+        let mmu_mbc = mbc::get_mbc(romdata, savepath, skip_checksum)?;
         let serial = match serial_callback {
             Some(cb) => Serial::new_with_callback(cb),
             None => Serial::new(),

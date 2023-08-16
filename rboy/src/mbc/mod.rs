@@ -1,6 +1,4 @@
 use crate::StrResult;
-use std::io::prelude::*;
-use std::fs::File;
 use std::path;
 
 mod mbc0;
@@ -37,19 +35,17 @@ pub trait MBC : Send {
     }
 }
 
-pub fn get_mbc(file: path::PathBuf, skip_checksum: bool) -> StrResult<Box<dyn MBC+'static>> {
-    let mut data = vec![];
-    File::open(&file).and_then(|mut f| f.read_to_end(&mut data)).map_err(|_| "Could not read ROM")?;
+pub fn get_mbc(data: Vec<u8>, savepath: Option<path::PathBuf>, skip_checksum: bool) -> StrResult<Box<dyn MBC+'static>> {
     if data.len() < 0x150 { return Err("Rom size to small"); }
     if !skip_checksum {
         check_checksum(&data)?;
     }
     match data[0x147] {
         0x00 => mbc0::MBC0::new(data).map(|v| Box::new(v) as Box<dyn MBC>),
-        0x01 ..= 0x03 => mbc1::MBC1::new(data, file).map(|v| Box::new(v) as Box<dyn MBC>),
-        0x05 ..= 0x06 => mbc2::MBC2::new(data, file).map(|v| Box::new(v) as Box<dyn MBC>),
-        0x0F ..= 0x13 => mbc3::MBC3::new(data, file).map(|v| Box::new(v) as Box<dyn MBC>),
-        0x19 ..= 0x1E => mbc5::MBC5::new(data, file).map(|v| Box::new(v) as Box<dyn MBC>),
+        0x01 ..= 0x03 => mbc1::MBC1::new(data, savepath).map(|v| Box::new(v) as Box<dyn MBC>),
+        0x05 ..= 0x06 => mbc2::MBC2::new(data, savepath).map(|v| Box::new(v) as Box<dyn MBC>),
+        0x0F ..= 0x13 => mbc3::MBC3::new(data, savepath).map(|v| Box::new(v) as Box<dyn MBC>),
+        0x19 ..= 0x1E => mbc5::MBC5::new(data, savepath).map(|v| Box::new(v) as Box<dyn MBC>),
         _ => { Err("Unsupported MBC type") },
     }
 }

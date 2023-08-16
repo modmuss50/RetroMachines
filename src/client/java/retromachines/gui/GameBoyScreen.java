@@ -14,10 +14,12 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
+import retromachines.GameBoyRom;
 import retromachines.GameboySound;
 import retromachines.rboy.RBoy;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 
@@ -33,10 +35,14 @@ public class GameBoyScreen extends Screen {
 	private final RBoy.Context gameboy;
 	private final Thread gameboyThread;
 
-	public GameBoyScreen() {
+	public GameBoyScreen(GameBoyRom rom) {
 		super(Text.literal("Gameboy"));
 
-		gameboy = RBoy.Context.create("/Users/mark/Downloads/Tetris/Tetris.gb", USE_NATIVE_AUDIO);
+		try {
+			gameboy = RBoy.Context.create(rom.loadRom(), USE_NATIVE_AUDIO);
+		} catch (IOException e) {
+			throw new UncheckedIOException("Failed to load gameboy rom", e);
+		}
 
 		gameboyThread = new Thread(gameboy::runCpu);
 		gameboyThread.setName("RetroMachines: Gameboy");
@@ -76,14 +82,23 @@ public class GameBoyScreen extends Screen {
 
 		int backgroundWidth = 256;
 		int backgroundHeight = 409;
-
+		int screenWidth = 160;
+		int screenHeight = 144;
 		int x = (this.width - backgroundWidth) / 2;
 		int y = (this.height - backgroundHeight) / 2;
 
+		renderBackground(context); // Tint
+
+		context.getMatrices().push();
+
+		// A cheap way to scale it to fit smaller screens.
+		if (backgroundHeight > this.height) {
+			context.getMatrices().scale(0.5F, 0.5F, 0);
+			context.getMatrices().translate(this.width /2, this.height/2, 0);
+		}
+
 		context.drawTexture(BACKGROUND_TEXTURE, x, y, 0, 0, backgroundWidth, backgroundHeight, backgroundWidth, 512);
 
-		int width = 160;
-		int height = 144;
 
 		byte[] gpuData = gameboy.getGpuData();
 
@@ -102,9 +117,7 @@ public class GameBoyScreen extends Screen {
 		GL11.glTexImage2D(
 			GL11.GL_TEXTURE_2D,
 			0,
-			GL30.GL_RGB8,
-			width,
-			height,
+			GL30.GL_RGB8, screenWidth, screenHeight,
 			0,
 			GL11.GL_RGB,
 			GL11.GL_UNSIGNED_BYTE,
@@ -113,10 +126,10 @@ public class GameBoyScreen extends Screen {
 		context.drawTexture(
 			GPU_TEXTURE,
 			x + 48, y + 48,
-			0, 0,
-			width, height,
-			width, height
+			0, 0, screenWidth, screenHeight, screenWidth, screenHeight
 		);
+
+		context.getMatrices().pop();
 	}
 
 	@Override

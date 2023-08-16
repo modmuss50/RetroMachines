@@ -25,7 +25,7 @@ public class RBoy {
 		public static int SPEED_DOWN = 103;
 	}
 
-	public static native long construct_cpu(String filename, boolean useNativeAudio);
+	public static native long construct_cpu(byte[] romData, boolean useNativeAudio);
 
 	public static native void run_cpu(long contextPtr);
 
@@ -34,8 +34,8 @@ public class RBoy {
 	public static native void send_event(long contextPtr, int event);
 
 	public record Context(long ptr) {
-		public static Context create(String filename, boolean useNativeAudio) {
-			long ptr = construct_cpu(filename, useNativeAudio);
+		public static Context create(byte[] romData, boolean useNativeAudio) {
+			long ptr = construct_cpu(romData, useNativeAudio);
 
 			if (ptr == 0) {
 				throw new RuntimeException();

@@ -6,7 +6,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.TypedActionResult;
 import retromachines.gui.GameBoyScreen;
-import retromachines.rboy.RBoyEvents;
 
 public class RetroMachinesClient implements ClientModInitializer {
 	@Override
@@ -19,18 +18,11 @@ public class RetroMachinesClient implements ClientModInitializer {
 			}
 
 			if (stack.getItem() == RetroMachines.GAME_BOY_ITEM) {
-				MinecraftClient.getInstance().setScreen(new GameBoyScreen());
+				MinecraftClient.getInstance().setScreen(new GameBoyScreen(GameBoyRom.BUILTIN_2048));
 				return TypedActionResult.success(stack);
 			}
 
 			return TypedActionResult.pass(stack);
-		});
-
-		RBoyEvents.AUDIO_DATA.register(new RBoyEvents.AudioData() {
-			@Override
-			public void onData(float[] leftChannel, float[] rightChannel) {
-
-			}
 		});
 	}
 }

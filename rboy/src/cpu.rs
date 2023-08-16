@@ -1,3 +1,4 @@
+use std::path;
 use crate::register::CpuFlag::{C, N, H, Z};
 use crate::register::Registers;
 use crate::serial::SerialCallback;
@@ -14,8 +15,8 @@ pub struct CPU<'a> {
 }
 
 impl<'a> CPU<'a> {
-    pub fn new(romname: &str, serial_callback: Option<SerialCallback<'a>>, skip_checksum: bool) -> StrResult<CPU<'a>> {
-        let cpu_mmu = MMU::new(romname, serial_callback, skip_checksum)?;
+    pub fn new(romdata: Vec<u8>, savepath: Option<path::PathBuf>, serial_callback: Option<SerialCallback<'a>>, skip_checksum: bool) -> StrResult<CPU<'a>> {
+        let cpu_mmu = MMU::new(romdata, savepath, serial_callback, skip_checksum)?;
         let registers = Registers::new(cpu_mmu.gbmode);
         Ok(CPU {
             reg: registers,
@@ -27,8 +28,8 @@ impl<'a> CPU<'a> {
         })
     }
 
-    pub fn new_cgb(romname: &str, serial_callback: Option<SerialCallback<'a>>, skip_checksum: bool) -> StrResult<CPU<'a>> {
-        let cpu_mmu = MMU::new_cgb(romname, serial_callback, skip_checksum)?;
+    pub fn new_cgb(romdata: Vec<u8>, savepath: Option<path::PathBuf>, serial_callback: Option<SerialCallback<'a>>, skip_checksum: bool) -> StrResult<CPU<'a>> {
+        let cpu_mmu = MMU::new_cgb(romdata, savepath, serial_callback, skip_checksum)?;
         let registers = Registers::new(cpu_mmu.gbmode);
         Ok(CPU {
             reg: registers,

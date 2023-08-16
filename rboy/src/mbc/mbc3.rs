@@ -20,10 +20,10 @@ pub struct MBC3 {
 }
 
 impl MBC3 {
-    pub fn new(data: Vec<u8>, file: path::PathBuf) -> StrResult<MBC3> {
+    pub fn new(data: Vec<u8>, savepath: Option<path::PathBuf>) -> StrResult<MBC3> {
         let subtype = data[0x147];
         let svpath = match subtype {
-            0x0F | 0x10 | 0x13 => Some(file.with_extension("gbsave")),
+            0x0F | 0x10 | 0x13 => savepath.map(|file| file.with_extension("gbsave")),
             _ => None,
         };
         let rambanks = match subtype {

@@ -14,10 +14,10 @@ pub struct MBC2 {
 }
 
 impl MBC2 {
-    pub fn new(data: Vec<u8>, file: path::PathBuf) -> StrResult<MBC2> {
+    pub fn new(data: Vec<u8>, savepath: Option<path::PathBuf>) -> StrResult<MBC2> {
         let svpath = match data[0x147] {
             0x05 => None,
-            0x06 => Some(file.with_extension("gbsave")),
+            0x06 => savepath.map(|file| file.with_extension("gbsave")),
             _ => None,
         };
         let rombanks = rom_banks(data[0x148]);

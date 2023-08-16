@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 use crate::device::Device;
 use std::sync::mpsc::{Receiver, SyncSender, TryRecvError, TrySendError};
-use std::thread;
+use std::{path, thread};
 use cpal::traits::{HostTrait, DeviceTrait, StreamTrait};
 
 pub enum GBEvent {
@@ -16,10 +16,10 @@ fn warn(message: &str) {
     eprintln!("{}", message);
 }
 
-pub fn construct_cpu(filename: &str, classic_mode: bool, output_serial: bool, output_printer: bool, skip_checksum: bool) -> Option<Box<Device>> {
+pub fn construct_cpu(romdata: Vec<u8>, savepath: Option<path::PathBuf>, classic_mode: bool, output_serial: bool, output_printer: bool, skip_checksum: bool) -> Option<Box<Device>> {
     let opt_c = match classic_mode {
-        true => Device::new(filename, skip_checksum),
-        false => Device::new_cgb(filename, skip_checksum),
+        true => Device::new(romdata, savepath, skip_checksum),
+        false => Device::new_cgb(romdata, savepath, skip_checksum),
     };
     let mut c = match opt_c
     {

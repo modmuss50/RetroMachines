@@ -17,10 +17,10 @@ pub struct MBC1 {
 }
 
 impl MBC1 {
-    pub fn new(data: Vec<u8>, file: path::PathBuf) -> StrResult<MBC1> {
+    pub fn new(data: Vec<u8>, savepath: Option<path::PathBuf>) -> StrResult<MBC1> {
         let (svpath, rambanks) = match data[0x147] {
             0x02 => (None, ram_banks(data[0x149])),
-            0x03 => (Some(file.with_extension("gbsave")), ram_banks(data[0x149])),
+            0x03 => (savepath.map(|file| file.with_extension("gbsave")), ram_banks(data[0x149])),
             _ => (None, 0),
         };
         let rombanks = rom_banks(data[0x148]);

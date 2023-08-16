@@ -3,7 +3,7 @@ use std::sync::mpsc::{Receiver, Sender, SyncSender};
 
 use cpal::Stream;
 use jni::{JavaVM, JNIEnv};
-use jni::objects::{JByteArray, JClass, JString, JValue};
+use jni::objects::{JByteArray, JClass, JValue};
 use jni::sys::{jboolean, jint, jlong, jsize};
 
 use crate::device::Device;
@@ -23,18 +23,16 @@ struct CpuContext {
 }
 
 #[no_mangle]
-pub unsafe extern "system" fn Java_retromachines_rboy_RBoy_construct_1cpu<'local>(mut env: JNIEnv<'local>,
+pub unsafe extern "system" fn Java_retromachines_rboy_RBoy_construct_1cpu<'local>(env: JNIEnv<'local>,
                                                               _class: JClass<'local>,
-                                                              j_filename: JString<'local>,
+                                                              rom_data: JByteArray<'local>,
                                                               use_native_audio: jboolean) -> jlong {
-    let filename: String = env
-        .get_string(&j_filename)
-        .expect("Couldn't get java string!")
-        .into();
+    let rom_data = env.convert_byte_array(&rom_data).unwrap();
 
     let cpu = construct_cpu(
-        filename.as_str(),
-        true,
+        rom_data,
+        None,
+        false,
         true,
         false,
         false

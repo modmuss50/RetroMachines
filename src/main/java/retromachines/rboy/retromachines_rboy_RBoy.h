@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     retromachines_rboy_RBoy
  * Method:    construct_cpu
- * Signature: (Ljava/lang/String;)J
+ * Signature: ([BZ)J
  */
 JNIEXPORT jlong JNICALL Java_retromachines_rboy_RBoy_construct_1cpu
-  (JNIEnv *, jclass, jstring);
+  (JNIEnv *, jclass, jbyteArray, jboolean);
 
 /*
  * Class:     retromachines_rboy_RBoy
