@@ -5,12 +5,12 @@ jobs:
   build_natives_linux:
     strategy:
       matrix:
-        target: [ aarch64-unknown-linux-gnu, i686-unknown-linux-gnu, x86_64-unknown-linux-gnu ]
+        target: [ x86_64-unknown-linux-gnu ]
     runs-on: ubuntu-22.04
     steps:
       - name: checkout repository
         uses: actions/checkout@v3
-      - run: sudo apt update && sudo apt install --assume-yes libasound2-dev libudev-dev libasound2-dev:i386 libudev-dev:i386 libasound2-dev:arm64 libudev-dev:arm64
+      - run: sudo apt update && sudo apt install --assume-yes libasound2-dev libudev-dev
       - run: rustup target add ${{ matrix.target }}
       - run: cargo build --lib --release --target ${{ matrix.target }}
         working-directory: ./rboy
