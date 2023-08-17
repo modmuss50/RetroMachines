@@ -78,6 +78,9 @@ def buildNativesTask(def target, def currentPlatform) {
 			include "*.dll" // Windows
 			include "*.so" // Linux
 		}
+		from(file("${target}-natives")) {
+			include "*.so" // Linux
+		}
 		into file("src/main/resources/natives/${target}")
 	}
 
@@ -112,8 +115,12 @@ buildNativesTask("x86_64-apple-darwin", operatingSystem.isMacOS())
 buildNativesTask("aarch64-apple-darwin", operatingSystem.isMacOS())
 
 buildNativesTask("x86_64-unknown-linux-gnu", operatingSystem.isLinux())
-buildNativesTask("i686-unknown-linux-gnu", operatingSystem.isLinux())
-buildNativesTask("aarch64-unknown-linux-gnu", operatingSystem.isLinux())
+// Cross compiled via github actions
+buildNativesTask("aarch64-unknown-linux-gnu", false)
+buildNativesTask("riscv64-unknown-linux-gnu", false)
+buildNativesTask("ppc64le-unknown-linux-gnu", false)
+buildNativesTask("s390x-unknown-linux-gnu", false)
+buildNativesTask("armv7-unknown-linux-gnu", false)
 
 buildNativesTask("x86_64-pc-windows-msvc", operatingSystem.isWindows())
 buildNativesTask("i686-pc-windows-msvc", operatingSystem.isWindows())
