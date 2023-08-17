@@ -8,7 +8,7 @@ jobs:
         target: [ aarch64-musl, x86_64-musl ]
     runs-on: ubuntu-22.04
     container:
-      image: messense/rust-musl-cross:armv7-musleabihf:${{ matrix.target }}
+      image: messense/rust-musl-cross:${{ matrix.target }}
     steps:
       - name: checkout repository
         uses: actions/checkout@v3
