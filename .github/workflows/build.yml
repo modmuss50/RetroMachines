@@ -3,21 +3,39 @@ on: [pull_request, push]
 
 jobs:
   build_natives_linux:
-    strategy:
-      matrix:
-        target: [ aarch64-musl, x86_64-musl ]
     runs-on: ubuntu-22.04
-    container:
-      image: messense/rust-musl-cross:${{ matrix.target }}
     steps:
       - name: checkout repository
         uses: actions/checkout@v3
-      - run: cargo build --lib --release
+      - run: sudo apt update && sudo apt install --assume-yes libasound2-dev libudev-dev
+      - run: rustup target add ${{ matrix.target }}
+      - run: cargo build --lib --release --target x86_64-unknown-linux-gnu
         working-directory: ./rboy
       - name: upload natives
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.target }}-natives
+          name: x86_64-unknown-linux-gnu-natives
+          path: rboy/target/**/release/*.so
+
+  build_natives_linux_cross_compile:
+    strategy:
+      matrix:
+        target: [ aarch64, riscv64 ]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v3
+      - uses: uraimo/run-on-arch-action@v2
+        with:
+          arch: ${{ matrix.target }}
+          distro: ubuntu22.04
+          run: |
+            sudo apt update && sudo apt install --assume-yes libasound2-dev libudev-dev
+            cd rboy && cargo build --lib --release --target ${{ matrix.target }}-unknown-linux-gnu-natives
+      - name: upload natives
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.target }}-unknown-linux-gnu-natives
           path: rboy/target/**/release/*.so
 
   build_natives_windows:
@@ -56,7 +74,7 @@ jobs:
 
   build:
     runs-on: ubuntu-22.04
-    needs: [build_natives_linux, build_natives_windows, build_natives_macos]
+    needs: [build_natives_linux, build_natives_linux_cross_compile, build_natives_windows, build_natives_macos]
     steps:
       - name: checkout repository
         uses: actions/checkout@v3
