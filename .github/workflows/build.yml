@@ -30,7 +30,7 @@ jobs:
           arch: ${{ matrix.target }}
           distro: ubuntu22.04
           install: |
-            apt update && apt install --assume-yes build-essential libasound2-dev libudev-dev curl
+            apt update && apt install --assume-yes build-essential libasound2 libasound2-dev libudev-dev curl pkg-config
             curl https://sh.rustup.rs -sSf | sh -s -- -y
           run: |
             source "$HOME/.cargo/env"
