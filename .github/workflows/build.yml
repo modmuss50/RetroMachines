@@ -28,7 +28,6 @@ jobs:
         with:
           arch: ${{ matrix.target }}
           distro: ubuntu22.04
-          githubToken: ${{ github.token }}
           install: |
             apt update && apt install --assume-yes libasound2-dev libudev-dev curl
             curl https://sh.rustup.rs -sSf | sh -s -- -y
