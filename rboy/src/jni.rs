@@ -1,7 +1,6 @@
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender, SyncSender};
 
-use cpal::Stream;
 use jni::{JavaVM, JNIEnv};
 use jni::objects::{JByteArray, JClass, JValue};
 use jni::sys::{jboolean, jint, jlong, jsize};
@@ -13,7 +12,8 @@ struct Context {
     cpu_context_ptr: jlong,
     gpu_receiver: Receiver<Vec<u8>>,
     event_sender: Sender<GBEvent>,
-    _cpal_audio_stream: Option<Stream>
+    #[cfg(not(target_env = "musl"))]
+    _cpal_audio_stream: Option<cpal::Stream>
 }
 
 struct CpuContext {
@@ -44,7 +44,9 @@ pub unsafe extern "system" fn Java_retromachines_rboy_RBoy_construct_1cpu<'local
 
     let mut cpu = cpu.unwrap();
 
+    #[cfg(not(target_env = "musl"))]
     let mut cpal_audio_stream = None;
+    #[cfg(not(target_env = "musl"))]
     if use_native_audio != 0 {
         let player = crate::entrypoint::CpalPlayer::get();
         match player {
@@ -66,7 +68,13 @@ pub unsafe extern "system" fn Java_retromachines_rboy_RBoy_construct_1cpu<'local
 
     // The CPU context's ownership is moved to the cpu thread.
     let cpu_context = CpuContext {cpu, gpu_sender, event_receiver};
-    let context = Context {cpu_context_ptr: Box::into_raw(Box::new(cpu_context)) as jlong, gpu_receiver, event_sender, _cpal_audio_stream: cpal_audio_stream};
+    let context = Context {
+        cpu_context_ptr: Box::into_raw(Box::new(cpu_context)) as jlong,
+        gpu_receiver,
+        event_sender,
+        #[cfg(not(target_env = "musl"))]
+        _cpal_audio_stream: cpal_audio_stream
+    };
 
     return Box::into_raw(Box::new(context)) as jlong;
 }

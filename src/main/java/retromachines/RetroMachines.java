@@ -73,7 +73,7 @@ public class RetroMachines implements ModInitializer {
 	enum OperatingSystem {
 		MAC_OS("apple-darwin/librboy.dylib"),
 		LINUX("unknown-linux-gnu/librboy.so"),
-		WINDOWS("pc-windows-msvc/librboy.dll");
+		WINDOWS("pc-windows-msvc/rboy.dll");
 		private final String suffix;
 
 
