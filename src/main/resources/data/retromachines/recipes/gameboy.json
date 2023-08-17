@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "#R#",
+    "iLi",
+    "#O#"
+  ],
+  "key": {
+    "#": {
+      "item": "minecraft:stone"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "i": {
+      "item": "minecraft:iron_ingot"
+    },
+    "L": {
+      "item": "minecraft:lime_stained_glass_pane"
+    },
+    "O": {
+      "item": "minecraft:oak_button"
+    }
+  },
+  "result": {
+    "item": "retromachines:gameboy",
+    "count": 1
+  }
+}
