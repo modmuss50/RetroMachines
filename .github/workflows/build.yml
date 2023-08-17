@@ -18,8 +18,9 @@ jobs:
 
   build_natives_linux_cross_compile:
     strategy:
+      fail-fast: false
       matrix:
-        target: [ aarch64, riscv64 ]
+        target: [ aarch64, riscv64, ppc64le, s390x, armv7 ]
     runs-on: ubuntu-22.04
     steps:
       - name: checkout repository
@@ -33,12 +34,12 @@ jobs:
             curl https://sh.rustup.rs -sSf | sh -s -- -y
           run: |
             source "$HOME/.cargo/env"
-            cd rboy && cargo build --lib --release --target ${{ matrix.target }}-unknown-linux-gnu-natives
+            cd rboy && cargo build --lib --release
       - name: upload natives
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.target }}-unknown-linux-gnu-natives
-          path: rboy/target/**/release/*.so
+          path: rboy/target/release/*.so
 
   build_natives_windows:
     strategy:
