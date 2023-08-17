@@ -32,6 +32,7 @@ jobs:
             apt update && apt install --assume-yes libasound2-dev libudev-dev curl
             curl https://sh.rustup.rs -sSf | sh -s -- -y
           run: |
+            source "$HOME/.cargo/env"
             cd rboy && cargo build --lib --release --target ${{ matrix.target }}-unknown-linux-gnu-natives
       - name: upload natives
         uses: actions/upload-artifact@v3
