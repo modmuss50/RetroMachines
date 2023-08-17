@@ -2,7 +2,6 @@ use std::sync::{Arc, Mutex};
 use crate::device::Device;
 use std::sync::mpsc::{Receiver, SyncSender, TryRecvError, TrySendError};
 use std::{path, thread};
-#[cfg(not(target_env = "musl"))]
 use cpal::traits::{HostTrait, DeviceTrait, StreamTrait};
 
 pub enum GBEvent {
@@ -91,13 +90,11 @@ fn timer_periodic(ms: u64) -> Receiver<()> {
     rx
 }
 
-#[cfg(not(target_env = "musl"))]
 pub struct CpalPlayer {
     buffer: Arc<Mutex<Vec<(f32, f32)>>>,
     sample_rate: u32,
 }
 
-#[cfg(not(target_env = "musl"))]
 impl CpalPlayer {
     pub(crate) fn get() -> Option<(CpalPlayer, cpal::Stream)> {
         let device = match cpal::default_host().default_output_device() {
@@ -158,7 +155,6 @@ impl CpalPlayer {
     }
 }
 
-#[cfg(not(target_env = "musl"))]
 fn cpal_thread<T: cpal::Sample>(outbuffer: &mut[T], audio_buffer: &Arc<Mutex<Vec<(f32, f32)>>>) {
     let mut inbuffer = audio_buffer.lock().unwrap();
     let outlen =  ::std::cmp::min(outbuffer.len() / 2, inbuffer.len());
@@ -168,7 +164,6 @@ fn cpal_thread<T: cpal::Sample>(outbuffer: &mut[T], audio_buffer: &Arc<Mutex<Vec
     }
 }
 
-#[cfg(not(target_env = "musl"))]
 impl crate::AudioPlayer for CpalPlayer {
     fn play(&mut self, buf_left: &[f32], buf_right: &[f32]) {
         debug_assert!(buf_left.len() == buf_right.len());

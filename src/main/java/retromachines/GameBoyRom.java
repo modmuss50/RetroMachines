@@ -2,6 +2,8 @@ package retromachines;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Objects;
 
 public interface GameBoyRom {
@@ -20,6 +22,23 @@ public interface GameBoyRom {
 				Objects.requireNonNull(is, "Could not find: " + filename);
 				return is.readAllBytes();
 			}
+		}
+	}
+
+	record LocalRom(Path path) implements GameBoyRom {
+		@Override
+		public String name() {
+			return "Custom ROM";
+		}
+
+		@Override
+		public String credit() {
+			return "";
+		}
+
+		@Override
+		public byte[] loadRom() throws IOException {
+			return Files.readAllBytes(path);
 		}
 	}
 }

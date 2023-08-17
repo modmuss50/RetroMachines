@@ -12,7 +12,6 @@ struct Context {
     cpu_context_ptr: jlong,
     gpu_receiver: Receiver<Vec<u8>>,
     event_sender: Sender<GBEvent>,
-    #[cfg(not(target_env = "musl"))]
     _cpal_audio_stream: Option<cpal::Stream>
 }
 
@@ -44,9 +43,7 @@ pub unsafe extern "system" fn Java_retromachines_rboy_RBoy_construct_1cpu<'local
 
     let mut cpu = cpu.unwrap();
 
-    #[cfg(not(target_env = "musl"))]
     let mut cpal_audio_stream = None;
-    #[cfg(not(target_env = "musl"))]
     if use_native_audio != 0 {
         let player = crate::entrypoint::CpalPlayer::get();
         match player {
@@ -72,7 +69,6 @@ pub unsafe extern "system" fn Java_retromachines_rboy_RBoy_construct_1cpu<'local
         cpu_context_ptr: Box::into_raw(Box::new(cpu_context)) as jlong,
         gpu_receiver,
         event_sender,
-        #[cfg(not(target_env = "musl"))]
         _cpal_audio_stream: cpal_audio_stream
     };
 
