@@ -73,7 +73,7 @@ tasks.register("copyNatives") {
 def buildNativesTask(def target, def currentPlatform) {
 	def copyNativesTask = tasks.register("copyNatives_${target}", Copy) {
 		group "natives"
-		from(file("rboy/target/${target}/release")) {
+		from(file("${target}-natives/${target}/release")) {
 			include "*.dylib" // MacOS
 			include "*.dll" // Windows
 			include "*.so" // Linux
@@ -88,7 +88,16 @@ def buildNativesTask(def target, def currentPlatform) {
 		workingDir file("rboy")
 		commandLine "cargo", "build", "--lib", "--release", "--target", target
 
-		finalizedBy copyNativesTask
+		doLast {
+			project.copy {
+				from(file("rboy/target/${target}/release")) {
+					include "*.dylib" // MacOS
+					include "*.dll" // Windows
+					include "*.so" // Linux
+				}
+				into file("src/main/resources/natives/${target}")
+			}
+		}
 	}
 
 	if (currentPlatform) {
